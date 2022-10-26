@@ -20,7 +20,7 @@ function getActiveUsersCount(Client $client): int
 }
 
 while (true) {
-    if (getActiveUsersCount($client) < MAX_ACTIVE_USERS_COUNT) {
+    if (getActiveUsersCount($client) > MAX_ACTIVE_USERS_COUNT) {
         continue;
     }
     $user = $client->lpop('waiting');
