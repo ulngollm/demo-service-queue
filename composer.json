@@ -1,4 +1,10 @@
 {
+    "name": "ully/redis",
+    "autoload": {
+        "psr-4": {
+            "Ully\\Queue\\": "src/"
+        }
+    },
     "require": {
         "predis/predis": "^2.0"
     }

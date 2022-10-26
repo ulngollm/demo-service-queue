@@ -1,30 +1,31 @@
 <?php
 
+use Ully\Queue\Expiration;
+use Ully\Queue\UserType;
+
 require 'vendor/autoload.php';
-
-const VISITER_INACTIVITY_LIMIT = 15;
-const WAITING_EXPIRE_TIME = 5;
-
 
 $client = new Predis\Client();
 $sessionId = $argv[1];
 $userRequestTime = $_SERVER['REQUEST_TIME'];
 
+$userType = UserType::getUserType($sessionId, $client);
 
-if ($sessionId && $user = $client->get($sessionId)) {
-    $lastVisitTime = $client->zscore('active_users', $user);
-    if ($lastVisitTime > $userRequestTime - VISITER_INACTIVITY_LIMIT){
-        $client->zadd('active_users', [$user => VISITER_INACTIVITY_LIMIT]);
-        $client->expire($user, VISITER_INACTIVITY_LIMIT);
+if ($userType === UserType::ACTIVE) {
+    $lastVisitTime = $client->zscore('active_users', $sessionId);
+    if ($lastVisitTime > $userRequestTime - VISITER_INACTIVITY_LIMIT) {
+//            обновить время последнего визита
+        $client->zadd('active_users', [$sessionId => VISITER_INACTIVITY_LIMIT]);
     }
-    die();
 }
-if ($sessionId === null) {
+
+if ($sessionId === null || empty($client->get($sessionId))) {
     $sessionId = uniqid();
+    $client->set($sessionId, $userType);
     $client->rpush('waiting', [$sessionId]);
 }
 
-$client->set($sessionId, 1, WAITING_EXPIRE_TIME);
+$client->expire($sessionId, Expiration::getByUserType($userType));
 
 
 
