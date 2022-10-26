@@ -6,3 +6,6 @@ build:
 
 configure-debug:
 	export PHP_IDE_CONFIG="serverName=redis"
+
+run-worker:
+	php worker.php

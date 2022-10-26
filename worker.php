@@ -2,6 +2,7 @@
 
 use Predis\Client;
 use Ully\Queue\Expiration;
+use Ully\Queue\UserType;
 
 require 'vendor/autoload.php';
 
@@ -23,11 +24,19 @@ while (true) {
     if (getActiveUsersCount($client) > MAX_ACTIVE_USERS_COUNT) {
         continue;
     }
-    $user = $client->lpop('waiting');
-    if (!$timeRemainder = $client->ttl($user)) {
+    $nextUser = $client->lpop('waiting');
+    if ($nextUser === null) {
         continue;
     }
-    $client->expire($user, Expiration::ACTIVE_USER_LIMIT - $timeRemainder);
+    $timeRemainder = $client->ttl($nextUser);
+    if ($timeRemainder <= 0) {
+        continue;
+    }
+
+    $client->set($nextUser, UserType::ACTIVE);
+    $client->expire($nextUser, Expiration::ACTIVE_USER_LIMIT - $timeRemainder);
+
     $lastTimeVisited = time() - $timeRemainder;
-    $client->zadd('active_users', [$user => $lastTimeVisited]);
+    $client->zadd('active_users', [$nextUser => $lastTimeVisited]);
+    echo "Add $nextUser";
 }

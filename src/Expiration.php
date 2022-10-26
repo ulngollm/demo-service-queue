@@ -4,7 +4,7 @@ namespace Ully\Queue;
 
 class Expiration
 {
-    const ACTIVE_USER_LIMIT = 15 * 60;
+    const ACTIVE_USER_LIMIT = 5 * 60;
     const WAITING_USER_LIMIT = 2 * 60;
 
 
