@@ -1,12 +1,10 @@
 <?php
 
-
 use Predis\Client;
+use Ully\Queue\Expiration;
 
 require 'vendor/autoload.php';
 
-const VISITER_INACTIVITY_LIMIT = 15;
-const WAITING_EXPIRE_TIME = 5;
 const MAX_ACTIVE_USERS_COUNT = 10;
 
 $client = new Client();
@@ -17,7 +15,7 @@ function getActiveUsersCount(Client $client): int
     return $client->zcount(
         'active_users',
         $curTime,
-        $curTime - VISITER_INACTIVITY_LIMIT
+        $curTime - Expiration::ACTIVE_USER_LIMIT
     );
 }
 
@@ -29,7 +27,7 @@ while (true) {
     if (!$timeRemainder = $client->ttl($user)) {
         continue;
     }
-    $client->expire($user, VISITER_INACTIVITY_LIMIT - $timeRemainder);
+    $client->expire($user, Expiration::ACTIVE_USER_LIMIT - $timeRemainder);
     $lastTimeVisited = time() - $timeRemainder;
     $client->zadd('active_users', [$user => $lastTimeVisited]);
 }
